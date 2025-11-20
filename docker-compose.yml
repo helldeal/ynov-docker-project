@@ -1,0 +1,84 @@
+services:
+  reverse-proxy:
+    build:
+      context: ./reverse-proxy
+      dockerfile: Dockerfile
+    container_name: reverse-proxy
+    ports:
+      - "80:80"
+    depends_on:
+      - spring-api
+      - webapp
+    restart: unless-stopped
+    networks:
+      - webnet
+
+  webapp:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    container_name: webapp
+    expose:
+      - "80"
+    restart: unless-stopped
+    networks:
+      - webnet
+
+  spring-api:
+    build:
+      context: ./spring-api
+      dockerfile: Dockerfile
+    container_name: spring-api
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "8080"
+    ports:
+      - "8080:8080"
+    restart: on-failure
+    networks:
+      - webnet
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--spider",
+          "-q",
+          "http://localhost:8080/actuator/health",
+        ]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+
+  db:
+    image: postgres:15-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - webnet
+
+networks:
+  webnet:
+    driver: bridge
+
+volumes:
+  pgdata:
