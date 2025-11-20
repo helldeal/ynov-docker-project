@@ -63,3 +63,41 @@ docker-compose up --build
 | GET     | `/api/items`      | Liste des items    |
 | POST    | `/api/items`      | Ajoute un item     |
 | GET     | `/api/health`     | Health Check       |
+
+## 🧩 5. Problèmes Rencontrés & Solutions
+
+### ⚠️ Problème 1 — Conflit de port 80 (Apache)
+
+Symptôme :
+```perl
+failed to bind host port 80: address already in use
+```
+Cause : Apache tournait sur la machine hôte.
+
+Solution :
+```bash
+docker-compose down -v
+docker-compose up --build
+```
+
+### ⚠️ Problème 2 — Backend inaccessible depuis le frontend (CORS)
+
+Symptôme :
+```perl
+CORS header ‘Access-Control-Allow-Origin’ missing
+```
+Cause : Le frontend appelait http://localhost:8080 directement → origine différente.
+
+Solution :
+Utilisation de http://localhost dans api.js
+
+### ⚠️ Problème 3 — Backend ne se connecte pas à PostgreSQL
+
+Symptôme :
+```perl
+Connection to localhost:5432 refused
+```
+Cause : Spring Boot cherchait la DB sur localhost au lieu du conteneur Docker.
+
+Solution :
+Correction des variables d'environnement 
