@@ -44,13 +44,7 @@ services:
       - webnet
     healthcheck:
       test:
-        [
-          "CMD",
-          "wget",
-          "--spider",
-          "-q",
-          "http://localhost:8080/actuator/health",
-        ]
+        ["CMD", "wget", "--spider", "-q", "http://localhost:8080/api/health"]
       interval: 15s
       timeout: 3s
       retries: 5
